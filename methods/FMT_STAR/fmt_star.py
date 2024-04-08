@@ -49,14 +49,10 @@ class FMT_STAR:
         Returns:
             dict: The obstacle environment.
         """
-        obstacle_environment = [
-            {"polygon": self.tczs[tcz][0], "max_height": self.tczs[tcz][1]}
-            for tcz in self.tczs
-        ]
+        obstacle_environment = [{"polygon": self.tczs[tcz][0], "max_height": self.tczs[tcz][1]} for tcz in self.tczs]
 
         obstacle_environment.extend(
-            {"polygon": self.frzs[frz][0], "max_height": self.frzs[frz][1]}
-            for frz in self.frzs
+            {"polygon": self.frzs[frz][0], "max_height": self.frzs[frz][1]} for frz in self.frzs
         )
 
         return obstacle_environment
@@ -91,9 +87,7 @@ class FMT_STAR:
             ```
         """
 
-        self.start, self.goal = gf.initilise_start_goal_vertiports(
-            self.vertiports, start, goal
-        )
+        self.start, self.goal = gf.initilise_start_goal_vertiports(self.vertiports, start, goal)
 
         dep_rad = (
             dep_rad
@@ -110,9 +104,7 @@ class FMT_STAR:
             *self.vertiports[self.start][:-1], dep_rad, dep_alt, n_nodes
         )
 
-        self.arrival_points = gf.calculate_vertiport_points(
-            *self.vertiports[self.goal][:-1], arr_rad, arr_alt, n_nodes
-        )
+        self.arrival_points = gf.calculate_vertiport_points(*self.vertiports[self.goal][:-1], arr_rad, arr_alt, n_nodes)
 
         point_start = Point(self.vertiports[self.start])
         point_goal = Point(self.vertiports[self.goal])
@@ -126,22 +118,16 @@ class FMT_STAR:
 
         self.experience_zones = list(self.frzs.values())
         self.experience_zones.extend(
-            value
-            for key, value in self.tczs.items()
-            if key not in [self.start_tcz, self.goal_tcz]
+            value for key, value in self.tczs.items() if key not in [self.start_tcz, self.goal_tcz]
         )
 
-        self.arrival_points = self.validate_nodes(
-            self.arrival_points, True, levels=[arr_alt]
-        )
+        self.arrival_points = self.validate_nodes(self.arrival_points, True, levels=[arr_alt])
 
         arr_points = []
         for point in self.arrival_points:
             line = LineString([point[:-1], self.vertiports[self.goal][:-1]])
             valid = all(
-                gf.evaluate_intersection(
-                    line, point, self.vertiports[self.goal], poly, h
-                )
+                gf.evaluate_intersection(line, point, self.vertiports[self.goal], poly, h)
                 for poly, h in self.experience_zones
             )
             if valid:
@@ -152,9 +138,7 @@ class FMT_STAR:
         if len(self.arrival_points) == 0:
             raise ValueError("No valid arrival points found")
 
-        self.departure_points = self.validate_nodes(
-            self.departure_points, True, levels=[dep_alt]
-        )
+        self.departure_points = self.validate_nodes(self.departure_points, True, levels=[dep_alt])
         arr_points = []
         for point in self.departure_points:
             valid = all(
@@ -177,9 +161,7 @@ class FMT_STAR:
         print(
             "TRUE DIST: ",
             round(
-                gf.haversine_distance(
-                    self.vertiports[self.start][:-1], self.vertiports[self.goal][:-1]
-                ),
+                gf.haversine_distance(self.vertiports[self.start][:-1], self.vertiports[self.goal][:-1]),
                 2,
             ),
         )
@@ -208,9 +190,7 @@ class FMT_STAR:
             ```
         """
 
-        nodes = np.random.uniform(
-            self.sector.min(axis=0)[:2], self.sector.max(axis=0)[:2], (N, 2)
-        )
+        nodes = np.random.uniform(self.sector.min(axis=0)[:2], self.sector.max(axis=0)[:2], (N, 2))
         if validate and self.start is not None:
             nodes = self.validate_nodes(nodes, is3D=False)
 
@@ -272,25 +252,19 @@ class FMT_STAR:
             nodes = np.array(
                 [
                     np.random.uniform(
-                        np.append(
-                            self.sector.min(axis=0)[:2], [l + (height / 2) - 5], axis=0
-                        ),
-                        np.append(
-                            self.sector.max(axis=0)[:2], [l + (height / 2) + 5], axis=0
-                        ),
+                        np.append(self.sector.min(axis=0)[:2], [l + (height / 2) - 5], axis=0),
+                        np.append(self.sector.max(axis=0)[:2], [l + (height / 2) + 5], axis=0),
                         (N, 3),
                     )
                     for l in levels
                 ]
             )
         else:
-            temp_nodes = np.random.uniform(
-                self.sector.min(axis=0)[:2], self.sector.max(axis=0)[:2], (N, 2)
-            )
+            temp_nodes = np.random.uniform(self.sector.min(axis=0)[:2], self.sector.max(axis=0)[:2], (N, 2))
             nodes = np.array([np.column_stack((temp_nodes.copy(), l * np.ones(temp_nodes.shape[0]))) for l in levels])
-            
+
             print(nodes.shape)
-            
+
         nodes[:, :, -1] = np.round(nodes[:, :, -1])
 
         if validate and self.start is not None:
@@ -309,9 +283,7 @@ class FMT_STAR:
 
         return gf.build_distance_matrix(running_nodes, nodes, gf.haversine_distance)
 
-    def populate_nodes(
-        self, N: int = 1000, validate=True, is3D=True, floor=500, ceil=3000, height=1000
-    ) -> None:
+    def populate_nodes(self, N: int = 1000, validate=True, is3D=True, floor=500, ceil=3000, height=1000) -> None:
         """Generate nodes, with the start and goal points inserted at the start and 1st index respectively. Also validates the nodes, and builds the distance matrix.
 
         Args:
@@ -323,9 +295,7 @@ class FMT_STAR:
             height (int, optional): The height of each level. Defaults to 500.
         """
         self.nodes, self.running_nodes, self.distance_matrix = (
-            self.gen3D_nodes(N, validate, floor, ceil, height)
-            if is3D
-            else self.gen2D_nodes(N, validate)
+            self.gen3D_nodes(N, validate, floor, ceil, height) if is3D else self.gen2D_nodes(N, validate)
         )
 
     def find_path(self, min_dist=0, max_dist=5, is3D=True) -> None:
@@ -336,8 +306,8 @@ class FMT_STAR:
             max_dist (int, optional): The maximum distance between connected nodes. Defaults to 5.
             is3D (bool, optional): If True, the nodes will be 3-dimensional. Defaults to True.
         """
-        print('Finding Path...')
-        
+        print("Finding Path...")
+
         self.distance_matrix[self.distance_matrix == 0] = np.inf
         self.last_angles = np.zeros(len(self.distance_matrix))
 
@@ -351,7 +321,7 @@ class FMT_STAR:
         _open = PriorityQueue()
         _open_costs = np.full(n, np.inf)
         for i in self.origin_idxs:
-            min_g_dist = np.min(self.distance_matrix[i, self.destination_idxs])**2
+            min_g_dist = np.min(self.distance_matrix[i, self.destination_idxs]) ** 2
             _open.put((min_g_dist, i))
             _open_costs[i] = min_g_dist
 
@@ -366,9 +336,7 @@ class FMT_STAR:
             if _visited[active]:
                 continue
 
-            to_add = self.body(
-                active, _t_costs, _open_costs, min_dist, max_dist, is3D=is3D
-            )
+            to_add = self.body(active, _t_costs, _open_costs, min_dist, max_dist, is3D=is3D)
 
             for n, val in to_add.items():
                 if _visited[n]:
@@ -380,26 +348,19 @@ class FMT_STAR:
                     0
                     if any(self.distance_matrix[n, self.destination_idxs] == np.inf)
                     else np.min(self.distance_matrix[n, self.destination_idxs])
-                )**2
-                
+                ) ** 2
+
                 if is3D:
-                    alt_change = max(
-                        self.running_nodes[n][-1] - self.running_nodes[val[1]][-1], 0
-                    )
+                    alt_change = max(self.running_nodes[n][-1] - self.running_nodes[val[1]][-1], 0)
                 else:
                     alt_change = 0
 
-                _t_costs[n] = (
-                    _t_costs[val[1]]
-                    + self.distance_matrix[n, val[1]]
-                )
-                
+                _t_costs[n] = _t_costs[val[1]] + self.distance_matrix[n, val[1]]
+
                 cost += _t_costs[n]
-                
+
                 _open.put((cost, n))
                 _open_costs[n] = cost
-
-                
 
             _visited[active] = True
 
@@ -445,7 +406,7 @@ class FMT_STAR:
         temp_t_costs = {}
 
         for n in neighbours:
-            
+
             col_n = self.distance_matrix[n].copy()
 
             if any(col_n[self.destination_idxs] == np.inf):
@@ -453,33 +414,23 @@ class FMT_STAR:
             else:
                 g_dist = np.min(col_n[self.destination_idxs])
 
-            idxs_n = np.intersect1d(
-                np.where(col_n > min_dist)[0], np.where(col_n <= max_dist * 2)[0]
-            )
+            idxs_n = np.intersect1d(np.where(col_n > min_dist)[0], np.where(col_n <= max_dist * 2)[0])
             open_n = np.intersect1d(idxs_n, open_elems)
 
             for idx in open_n:
-                path = LineString(
-                    (self.running_nodes[n][:2], self.running_nodes[idx][:2])
-                )
+                path = LineString((self.running_nodes[n][:2], self.running_nodes[idx][:2]))
 
-                hdg = gf.calculate_initial_compass_bearing(
-                    *self.running_nodes[idx, :-1], *self.running_nodes[n, :-1]
-                )
+                hdg = gf.calculate_initial_compass_bearing(*self.running_nodes[idx, :-1], *self.running_nodes[n, :-1])
 
-                v_hdg = (
-                    True
-                    if self.last_angles[idx] == -1
-                    else abs(hdg - self.last_angles[idx]) <= 80
-                )
+                v_hdg = True if self.last_angles[idx] == -1 else abs(hdg - self.last_angles[idx]) <= 80
 
                 if not v_hdg:
                     continue
-                
+
                 if n in self.destination_idxs:
                     n_hdg = gf.calculate_initial_compass_bearing(
-                    *self.running_nodes[n, :-1], *self.vertiports[self.goal][:-1]
-                )
+                        *self.running_nodes[n, :-1], *self.vertiports[self.goal][:-1]
+                    )
                     if abs(n_hdg - hdg) > 80:
                         continue
 
@@ -495,9 +446,7 @@ class FMT_STAR:
                         for (poly, h) in self.experience_zones
                     )
                 else:
-                    valid = not any(
-                        poly.intersection(path) for (poly, _) in self.experience_zones
-                    )
+                    valid = not any(poly.intersection(path) for (poly, _) in self.experience_zones)
 
                 if is3D:
                     alt_change = self.running_nodes[n][-1] - self.running_nodes[idx][-1]
@@ -514,14 +463,12 @@ class FMT_STAR:
                     alt_change = 0
 
                 t_cost = _t_costs[idx] + col_n[idx]
-                if valid and (
-                    (n in add_open and temp_t_costs[n] > t_cost) or (n not in add_open)
-                ):
+                if valid and ((n in add_open and temp_t_costs[n] > t_cost) or (n not in add_open)):
                     add_open[n] = (g_dist, idx, hdg)
                     temp_t_costs[n] = t_cost
 
             if n in self.destination_idxs and n in add_open:
-                print('Here')
+                print("Here")
                 return add_open
         return add_open
 
@@ -543,7 +490,7 @@ class FMT_STAR:
             ```
         """
 
-        if self._parents == [] or all(self._parents == -1):
+        if len(self._parents) == 0 or all(self._parents == -1):
             raise ValueError("No path objects exist")
 
         paths = []
@@ -579,7 +526,7 @@ class FMT_STAR:
         Returns:
             np.ndarray: Returns the path as a numpy array.
         """
-        if self._parents == [] or all(self._parents[self.destination_idxs] == -1):
+        if len(self._parents) == 0 or all(self._parents[self.destination_idxs] == -1):
             raise ValueError("Path has not been generated/is not valid")
 
         active = np.where(self._parents[self.destination_idxs] != -1)[0]
@@ -640,17 +587,13 @@ class FMT_STAR:
             for point in nodes:
                 shp_point = Point(point)
 
-                if not any(
-                    poly.contains(shp_point) for (poly, _) in self.experience_zones
-                ):
+                if not any(poly.contains(shp_point) for (poly, _) in self.experience_zones):
                     new_nodes.append(point)
         else:
             init = nodes.shape[0] * nodes.shape[1]
 
             if levels is None:
-                raise ValueError(
-                    "Can not validate 3-dimensional nodes if levels is None"
-                )
+                raise ValueError("Can not validate 3-dimensional nodes if levels is None")
             if len(nodes.shape) != 3:
                 nodes = np.expand_dims(nodes, axis=0)
 
@@ -658,14 +601,9 @@ class FMT_STAR:
                 for point in nodes[l]:
                     shp_point = Point(point[:2])
 
-                    if all(
-                        point[2] > h or (not poly.contains(shp_point))
-                        for (poly, h) in self.experience_zones
-                    ):
+                    if all(point[2] > h or (not poly.contains(shp_point)) for (poly, h) in self.experience_zones):
                         new_nodes.append(point)
 
-        print(
-            f"Nodes validated in {round(perf_counter() - s,2)} seconds, yielding {len(new_nodes)}/{init} valid nodes"
-        )
+        print(f"Nodes validated in {round(perf_counter() - s,2)} seconds, yielding {len(new_nodes)}/{init} valid nodes")
 
         return np.array(new_nodes)
