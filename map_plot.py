@@ -1,12 +1,14 @@
-import folium
 import warnings
+
+import folium
 import numpy as np
 
 
 def generate_zone_info(name, zone):
-    # iframe = folium.IFrame('Account#:' + str(row.loc['ACCT']) + '<br>' + 'Name: ' + row.loc['NAME'] + '<br>' + 'Terr#: ' + str(row.loc['TERR']))
+    # iframe = folium.IFrame('Account#:' + str(row.loc['ACCT']) + '<br>' + 'Name: ' + row.loc['NAME'] + '<br>' + 'Terr#: ' + str(row.loc['TERR'])) # noqa:E501
     iframe = folium.IFrame(
-        f"<h4><b>{name}</b></h4>\n<b>Operating Altitudes</b>: 0ft-{zone[:,-1].max()}ft (0m-{round(zone[:,-1].max()/3.281,1)}m)"
+        f"<h4><b>{name}</b></h4>\n<b>Operating Altitudes</b>: 0ft-{zone[:,-1].max()}ft "
+        + f"(0m-{round(zone[:,-1].max()/3.281,1)}m)"
     )
     return folium.Popup(iframe, min_width=200, max_width=200)
 
@@ -18,17 +20,15 @@ class Map:
         self.vertiports = environment["vertiports"]
         self.frzs = environment["FRZs"]
 
-        self.center_lat, self.center_lon = (
-            self.sector[:, 1].min() + self.sector[:, 1].max()
-        ) / 2, (self.sector[:, 0].min() + self.sector[:, 0].max()) / 2
+        self.center_lat, self.center_lon = (self.sector[:, 1].min() + self.sector[:, 1].max()) / 2, (
+            self.sector[:, 0].min() + self.sector[:, 0].max()
+        ) / 2
 
         self.refresh()
 
     def populate_base(self):
         # Add airspace bounds as a green polygon
-        folium.Polygon(locations=self.sector[:, [1, 0]], color="green").add_to(
-            self.map_area
-        )  # Swap lat and lon
+        folium.Polygon(locations=self.sector[:, [1, 0]], color="green").add_to(self.map_area)  # Swap lat and lon
 
         # Add TCZs as purple lines
         for name, tcz in self.tczs.items():
@@ -66,7 +66,7 @@ class Map:
             warnings.warn("No type assigned, skipping...")
         elif _type.lower() == "nodes":
             unique_nodes = np.unique(element[:, :2], axis=0)
-            
+
             for node in unique_nodes:
                 folium.CircleMarker(
                     location=node[[1, 0]],
@@ -76,9 +76,7 @@ class Map:
                     fill_opacity=1,
                 ).add_to(self.map_area)
         elif _type.lower() == "path":
-            folium.PolyLine(locations=element[:, [1, 0]], weight=5).add_to(
-                self.map_area
-            )
+            folium.PolyLine(locations=element[:, [1, 0]], weight=5).add_to(self.map_area)
 
             for i in range(1, len(element) - 1):
                 node = element[i]
@@ -94,9 +92,9 @@ class Map:
         elif _type.lower() == "multi_path":
             added = set()
             for path in element:
-                folium.PolyLine(
-                    locations=path[:, [1, 0]], color="black", dash_array="10", weight=2
-                ).add_to(self.map_area)
+                folium.PolyLine(locations=path[:, [1, 0]], color="black", dash_array="10", weight=2).add_to(
+                    self.map_area
+                )
 
                 for node in path:
                     if tuple(node) in added:
@@ -109,7 +107,7 @@ class Map:
                         fill_color="black",
                         fill_opacity=1,
                     ).add_to(self.map_area)
-                    
+
                     added.add(tuple(node))
 
         else:
@@ -151,8 +149,6 @@ class Map:
 
     def refresh(self):
         print("Building map...")
-        self.map_area = folium.Map(
-            location=[self.center_lat, self.center_lon], zoom_start=11
-        )
+        self.map_area = folium.Map(location=[self.center_lat, self.center_lon], zoom_start=11)
         self.populate_base()
         print("Done building map.")

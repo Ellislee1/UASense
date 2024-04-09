@@ -1,4 +1,5 @@
 import json
+
 import numpy as np
 
 
@@ -15,19 +16,18 @@ def read_file(path: str) -> dict:
             name = item["properties"]["name"]
             geom = item["geometry"]
             _type = geom["type"]
-            
+
             coordinates = np.array(geom["coordinates"])
 
             if name.lower() == "airspace":
                 if sector is not None:
-                    raise ValueError(
-                        "Sector area already exists. Multiple sector areas cannot exist."
-                    )
+                    raise ValueError("Sector area already exists. Multiple sector areas cannot exist.")
                 sector = coordinates[0]
             elif geom["type"].lower() == "point":
                 if name in vertiports:
                     raise IndexError(
-                        f"A vertiport with name {name} already exists. Multiple vertiports with the same name cannot exist."
+                        f"A vertiport with name {name} already exists. Multiple vertiports with the same"
+                        + "name cannot exist."
                     )
                 vertiports[name] = coordinates
             elif name.startswith("TCZ_"):
@@ -47,9 +47,7 @@ def read_file(path: str) -> dict:
                 frzs[name] = coordinates[0]
 
     if sector is None:
-        raise ValueError(
-            "A sector does not exist. A sector must exist and have valid bounds."
-        )
+        raise ValueError("A sector does not exist. A sector must exist and have valid bounds.")
 
     if not vertiports:
         raise ValueError("No vertiports found. Vertiports must exist")
@@ -59,9 +57,7 @@ def read_file(path: str) -> dict:
     max_bounds = sector.max(axis=0)
 
     for tcz in terminal_control_zones:
-        terminal_control_zones[tcz] = np.clip(
-            terminal_control_zones[tcz], min_bounds, max_bounds
-        )
+        terminal_control_zones[tcz] = np.clip(terminal_control_zones[tcz], min_bounds, max_bounds)
 
     for frz in frzs:
         frzs[frz] = np.clip(frzs[frz], min_bounds, max_bounds)

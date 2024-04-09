@@ -1,7 +1,9 @@
-import numpy as np
-from shapely.geometry import Point, LineString, Polygon
-from time import perf_counter
 from queue import PriorityQueue
+from time import perf_counter
+
+import numpy as np
+from shapely.geometry import LineString, Point, Polygon
+
 import functions.geo_functions as gf
 
 
@@ -252,16 +254,18 @@ class FMT_STAR:
             nodes = np.array(
                 [
                     np.random.uniform(
-                        np.append(self.sector.min(axis=0)[:2], [l + (height / 2) - 5], axis=0),
-                        np.append(self.sector.max(axis=0)[:2], [l + (height / 2) + 5], axis=0),
+                        np.append(self.sector.min(axis=0)[:2], [level + (height / 2) - 5], axis=0),
+                        np.append(self.sector.max(axis=0)[:2], [level + (height / 2) + 5], axis=0),
                         (N, 3),
                     )
-                    for l in levels
+                    for level in levels
                 ]
             )
         else:
             temp_nodes = np.random.uniform(self.sector.min(axis=0)[:2], self.sector.max(axis=0)[:2], (N, 2))
-            nodes = np.array([np.column_stack((temp_nodes.copy(), l * np.ones(temp_nodes.shape[0]))) for l in levels])
+            nodes = np.array(
+                [np.column_stack((temp_nodes.copy(), level * np.ones(temp_nodes.shape[0]))) for level in levels]
+            )
 
             print(nodes.shape)
 
@@ -284,7 +288,8 @@ class FMT_STAR:
         return gf.build_distance_matrix(running_nodes, nodes, gf.haversine_distance)
 
     def populate_nodes(self, N: int = 1000, validate=True, is3D=True, floor=500, ceil=3000, height=1000) -> None:
-        """Generate nodes, with the start and goal points inserted at the start and 1st index respectively. Also validates the nodes, and builds the distance matrix.
+        """Generate nodes, with the start and goal points inserted at the start and 1st index respectively.
+        Also validates the nodes and builds the distance matrix.
 
         Args:
             N (int, optional): Number of nodes to generate (for each level if 3D). Defaults to 1000.
@@ -349,11 +354,6 @@ class FMT_STAR:
                     if any(self.distance_matrix[n, self.destination_idxs] == np.inf)
                     else np.min(self.distance_matrix[n, self.destination_idxs])
                 ) ** 2
-
-                if is3D:
-                    alt_change = max(self.running_nodes[n][-1] - self.running_nodes[val[1]][-1], 0)
-                else:
-                    alt_change = 0
 
                 _t_costs[n] = _t_costs[val[1]] + self.distance_matrix[n, val[1]]
 
@@ -597,8 +597,8 @@ class FMT_STAR:
             if len(nodes.shape) != 3:
                 nodes = np.expand_dims(nodes, axis=0)
 
-            for l in range(len(levels)):
-                for point in nodes[l]:
+            for level in range(len(levels)):
+                for point in nodes[level]:
                     shp_point = Point(point[:2])
 
                     if all(point[2] > h or (not poly.contains(shp_point)) for (poly, h) in self.experience_zones):

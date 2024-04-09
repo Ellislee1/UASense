@@ -1,12 +1,11 @@
-import itertools
-import numpy as np
-import numba as nb
-from scipy.spatial.distance import cdist
-import typing
-from shapely import LineString, Polygon
-from time import perf_counter
 import math
+import typing
+from time import perf_counter
 
+import numba as nb
+import numpy as np
+from scipy.spatial.distance import cdist
+from shapely import LineString, Polygon
 
 
 @nb.njit
@@ -38,7 +37,6 @@ def haversine_distance(coord1: np.ndarray, coord2: np.ndarray) -> float:
     return 6371 * c
 
 
-
 @nb.njit
 def calculate_initial_compass_bearing(lon1, lat1, lon2, lat2):
     lat1 = math.radians(lat1)
@@ -52,6 +50,7 @@ def calculate_initial_compass_bearing(lon1, lat1, lon2, lat2):
     initial_bearing = math.atan2(y, x)
 
     return math.degrees(initial_bearing) % 360
+
 
 def calculate_vertiport_points(lon, lat, r, a, n):
     # Convert latitude and longitude from degrees to radians
@@ -68,10 +67,13 @@ def calculate_vertiport_points(lon, lat, r, a, n):
         d = r  # Since r is in kilometers
 
         # Use Haversine formula to find the new coordinates
-        new_lat = math.asin(math.sin(lat_rad) * math.cos(d / 6371.0) +
-                           math.cos(lat_rad) * math.sin(d / 6371.0) * math.cos(angle))
-        new_lon = lon_rad + math.atan2(math.sin(angle) * math.sin(d / 6371.0) * math.cos(lat_rad),
-                                       math.cos(d / 6371.0) - math.sin(lat_rad) * math.sin(new_lat))
+        new_lat = math.asin(
+            math.sin(lat_rad) * math.cos(d / 6371.0) + math.cos(lat_rad) * math.sin(d / 6371.0) * math.cos(angle)
+        )
+        new_lon = lon_rad + math.atan2(
+            math.sin(angle) * math.sin(d / 6371.0) * math.cos(lat_rad),
+            math.cos(d / 6371.0) - math.sin(lat_rad) * math.sin(new_lat),
+        )
 
         # Convert back to degrees
         new_lat = math.degrees(new_lat)
@@ -81,9 +83,8 @@ def calculate_vertiport_points(lon, lat, r, a, n):
 
     return np.array(points)
 
-def initilise_start_goal_vertiports(
-    vertiports: dict, start: str = None, goal: str = None
-) -> typing.Tuple[str, str]:
+
+def initilise_start_goal_vertiports(vertiports: dict, start: str = None, goal: str = None) -> typing.Tuple[str, str]:
     """Initializes the start and goal vertiports for the FMT* algorithm.
 
     Args:
@@ -129,6 +130,7 @@ def initilise_start_goal_vertiports(
 
     return (start, goal)
 
+
 @nb.njit
 def compute_distance_matrix(index_matrix, distance_matrix, distance_matrix_full):
     # sourcery skip: use-itertools-product
@@ -140,8 +142,8 @@ def compute_distance_matrix(index_matrix, distance_matrix, distance_matrix_full)
                 distance_matrix_full[i, j] = distance_matrix[index_i, index_j]
     return distance_matrix_full
 
-# Call the function in your code
 
+# Call the function in your code
 
 
 def build_distance_matrix(running_nodes: np.ndarray, nodes: np.ndarray, method: str) -> np.ndarray:
@@ -150,8 +152,8 @@ def build_distance_matrix(running_nodes: np.ndarray, nodes: np.ndarray, method: 
 
     unique_nodes = np.unique(running_nodes[:, :2], axis=0)
     distance_matrix = cdist(unique_nodes, unique_nodes, method)
-    
-    # return nodes, running_nodes, distance_matrix 
+
+    # return nodes, running_nodes, distance_matrix
 
     node_to_index = {tuple(node): index for index, node in enumerate(unique_nodes)}
     num_nodes = len(running_nodes)
@@ -165,15 +167,11 @@ def build_distance_matrix(running_nodes: np.ndarray, nodes: np.ndarray, method: 
     distance_matrix_full = compute_distance_matrix(index_matrix, distance_matrix, distance_matrix_full)
     print("Compiling distance matrix...")
 
-    print(
-        f"Distance matrix generated in {round(perf_counter() - s, 2)} seconds, with {num_nodes} nodes."
-    )
+    print(f"Distance matrix generated in {round(perf_counter() - s, 2)} seconds, with {num_nodes} nodes.")
     return nodes, running_nodes, distance_matrix_full
 
 
-def evaluate_intersection(
-    line: LineString, point1: np.ndarray, point2: np.ndarray, poly: Polygon, h: float
-) -> bool:
+def evaluate_intersection(line: LineString, point1: np.ndarray, point2: np.ndarray, poly: Polygon, h: float) -> bool:
     """Evaluates the intersection between a line segment and a polygon in 2D or 3D space.
 
     Args:
@@ -185,7 +183,7 @@ def evaluate_intersection(
         h (float): The threshold altitude value.
 
     Returns:
-        bool: True if the line segment does not intersect with the polygon below the threshold altitude, False otherwise.
+        bool: True if the line segment does not intersect with the polygon , False otherwise.
 
     Raises:
         ValueError: Raised when the type of the intersection result is unexpected.
@@ -202,16 +200,14 @@ def evaluate_intersection(
         result = fmt.evaluate_intersection(line, point1, point2, poly, h)
         print(result)
         ```
-    """
+    """  # noqa:E501
 
     point_intersections = line.intersection(poly)
     point1 = (x1, y1, z1) = point1[0], point1[1], point1[2]
     point2 = (x2, y2, z2) = point2[0], point2[1], point2[2]
 
     if point_intersections.geom_type == "LineString":
-        return evaluate_intersection_height(
-            np.array(point_intersections.coords), point1, point2, h
-        )
+        return evaluate_intersection_height(np.array(point_intersections.coords), point1, point2, h)
 
     elif point_intersections.geom_type == "MultiLineString":
         return all(
@@ -249,7 +245,7 @@ def evaluate_intersection_height(
         result = evaluate_intersection_height(line, point1, point2, h)
         print(result)
         ```
-    """
+    """  # noqa:E501
 
     if len(line) == 0:
         return True
@@ -259,12 +255,10 @@ def evaluate_intersection_height(
 
     for i_point in line:
         x, y = i_point
-        t = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / (
-            (x2 - x1) ** 2 + (y2 - y1) ** 2
-        )
+        t = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / ((x2 - x1) ** 2 + (y2 - y1) ** 2)
         altitude = z1 + t * (z2 - z1)
 
-        if altitude <= h+50:
+        if altitude <= h + 50:
             return False
 
     return True

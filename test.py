@@ -1,15 +1,18 @@
-from shapely.geometry import Polygon, Point
 import geopandas as gpd
-import numpy as np
-
 import matplotlib.pyplot as plt
+import numpy as np
+from shapely.geometry import Polygon
 
 # Given bounding box in (lon, lat) pairs
-poly = np.array([[-74.35067099968856, 40.95038628235707],
+poly = np.array(
+    [
+        [-74.35067099968856, 40.95038628235707],
         [-74.35134665517963, 40.49961892079759],
         [-73.64880132727227, 40.50053835401126],
         [-73.65109221855438, 40.94965116545227],
-        [-74.35067099968856, 40.95038628235707]])
+        [-74.35067099968856, 40.95038628235707],
+    ]
+)
 
 # Convert to a Shapely Polygon
 polygon = Polygon(poly)
@@ -50,15 +53,17 @@ bounding_boxes_lonlat = gpd.GeoDataFrame(geometry=bounding_boxes, crs="EPSG:3395
 bounding_boxes_lonlat = bounding_boxes_lonlat.to_crs("EPSG:4326")  # Project back to WGS84
 
 # Convert the bounding boxes to a list of (lon, lat) pairs
-bounding_boxes_lonlat_list = np.array([(box.exterior.xy[0].tolist(), box.exterior.xy[1].tolist()) for box in bounding_boxes_lonlat.geometry])
+bounding_boxes_lonlat_list = np.array(
+    [(box.exterior.xy[0].tolist(), box.exterior.xy[1].tolist()) for box in bounding_boxes_lonlat.geometry]
+)
 
 print(bounding_boxes_lonlat_list.shape)
 
 # Now, bounding_boxes_lonlat_list contains the list of bounding boxes in (lon, lat) pairs
 
-plt.plot(poly[:,0], poly[:,1], c='green')
+plt.plot(poly[:, 0], poly[:, 1], c="green")
 
 for box in bounding_boxes_lonlat_list:
-    plt.plot(box[0], box[1], c='red', alpha=0.5)
+    plt.plot(box[0], box[1], c="red", alpha=0.5)
 
 plt.show()

@@ -1,13 +1,15 @@
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import simplekml
+
+from functions.geo_functions import haversine_distance
 from geojson_parser import read_file
 from map_plot import Map
 from methods import FMT
-from functions.geo_functions import haversine_distance
-import matplotlib.pyplot as plt
-import time
-import simplekml
-import numpy as np
 
-x = np.random.randint(0,99999)
+x = np.random.randint(0, 99999)
 print(x)
 # np.random.seed(121234)
 
@@ -31,9 +33,7 @@ m = Map(environment)
 def save_3d_path_to_kml(path, output_file):
     kml = simplekml.Kml()
 
-    linestring = kml.newlinestring(
-        name="3D Path", altitudemode=simplekml.AltitudeMode.absolute
-    )
+    linestring = kml.newlinestring(name="3D Path", altitudemode=simplekml.AltitudeMode.absolute)
 
     linestring.style.linestyle.color = simplekml.Color.changealphaint(
         100, simplekml.Color.cyan
@@ -48,6 +48,7 @@ def save_3d_path_to_kml(path, output_file):
     kml.save(output_file)
     print(f"KML file saved as {output_file}")
 
+
 def get_max_climb_profile(v_path, time):
     max_climb = [0]
     times = [0]
@@ -55,21 +56,21 @@ def get_max_climb_profile(v_path, time):
         t0 = times[-1]
         y0 = v_path[i - 1]
         y1 = v_path[i]
-        t1 = t0 + (y1-y0)/(MAX_CLIMB if y1 > y0 else -MAX_CLIMB)
-        
+        t1 = t0 + (y1 - y0) / (MAX_CLIMB if y1 > y0 else -MAX_CLIMB)
+
         if y1 < y0:
-            t1 = time[i]-(t1-t0)
+            t1 = time[i] - (t1 - t0)
             times.append(t1)
             max_climb.append(y0)
             times.append(time[i])
             max_climb.append(y1)
-            
+
         else:
             times.append(t1)
             max_climb.extend((y1, y1))
             times.append(time[i])
     return times, max_climb
-    
+
 
 def plot_vProfile(_path):
     time = [0]
@@ -78,14 +79,10 @@ def plot_vProfile(_path):
 
     for i in range(1, len(_path)):
         # Calculate time based on distance and speed in minutes
-        time.append(
-            (time[-1] + (haversine_distance(_path[i - 1, :2], _path[i, :2]) * 1000 / CRUISE) / 60)
-        )
+        time.append((time[-1] + (haversine_distance(_path[i - 1, :2], _path[i, :2]) * 1000 / CRUISE) / 60))
 
         # Calculate cumulative distance
-        distance.append(
-            distance[-1] + haversine_distance(_path[i - 1, :2], _path[i, :2])
-        )
+        distance.append(distance[-1] + haversine_distance(_path[i - 1, :2], _path[i, :2]))
 
         altitude.append(_path[i, -1])
 
@@ -115,14 +112,14 @@ def plot_vProfile(_path):
     # Plot altitude in meters on the secondary y-axis
     ax3.plot(time, [a * feet_to_meters for a in altitude], label="Altitude (m)")
     ax3.set_ylabel("Altitude (m)")
-    dist = sum(
-        haversine_distance(_path[i - 1, :2], _path[i, :2])
-        for i in range(1, len(_path))
-    )
-    origional_dist = haversine_distance(_path[0,:2], _path[-1,:2])
+    dist = sum(haversine_distance(_path[i - 1, :2], _path[i, :2]) for i in range(1, len(_path)))
+    origional_dist = haversine_distance(_path[0, :2], _path[-1, :2])
 
     print(
-        f"Total dist: {round(dist, 2)}km (Direct dist: {round(origional_dist, 2)}km). Total time en route: {int(round(time[-1], 2) // 1):02}:{int(round(time[-1] % 1 * 60, 2)):02}. This route is {round(((dist - origional_dist) / origional_dist) * 100, 2)}%  ({round((dist-origional_dist),2)}km) longer than the direct route."
+        f"Total dist: {round(dist, 2)}km (Direct dist: {round(origional_dist, 2)}km). "
+        + f"Total time en route: {int(round(time[-1], 2) // 1):02}:{int(round(time[-1] % 1 * 60, 2)):02}. "
+        + f"This route is {round(((dist - origional_dist) / origional_dist) * 100, 2)}% "
+        + f"({round((dist-origional_dist),2)}km) longer than the direct route."
     )
 
     # Add labels and legend
@@ -144,9 +141,7 @@ path = path_find.build_path_object()
 
 m.add_elements(path_find.build_all_path_objects(), "multi_path")
 m.add_elements(path_find.nodes, _type="nodes")
-m.add_startgoal(
-    path_find.vertiports[path_find.start], path_find.vertiports[path_find.goal]
-)
+m.add_startgoal(path_find.vertiports[path_find.start], path_find.vertiports[path_find.goal])
 m.add_elements(path, "path")
 
 save_3d_path_to_kml(path, "out/path.kml")
